@@ -22,7 +22,9 @@ class ManifoldReader:
     Handles pagination automatically for all list endpoints.
     """
 
-    BASE_URL = "https://api.manifold.markets/v0"
+    _BASE_URL = "https://api.manifold.markets/v0"
+    _UAS = "ManifoldBot/0.1.0"
+
 
     def __init__(self, timeout: int = 30, retry_config: Optional[Dict] = None):
         """
@@ -36,7 +38,7 @@ class ManifoldReader:
         self.retry_config = retry_config or {"max_retries": 3, "backoff_factor": 2, "retry_on": [429, 500, 502, 503, 504]}
 
         self.session = requests.Session()
-        self.session.headers.update({"User-Agent": "ManifoldBot/0.1.0", "Accept": "application/json"})
+        self.session.headers.update({"User-Agent": self._UAS, "Accept": "application/json"})
 
         logger.info("ManifoldReader initialized (no API key required)")
 
@@ -59,7 +61,7 @@ class ManifoldReader:
             requests.RequestException: On request failure
         """
         # Build URL like oreacle-bot does
-        url = f"{self.BASE_URL}/{endpoint}"
+        url = f"{self._BASE_URL}/{endpoint}"
 
         for attempt in range(self.retry_config["max_retries"] + 1):
             try:
@@ -75,7 +77,7 @@ class ManifoldReader:
                     else:
                         # Max retries exceeded, raise exception
                         raise requests.RequestException("Max retries exceeded")
-                
+
                 # For 400 errors, log detailed error and raise immediately
                 if response.status_code == 400:
                     logger.error(f"Bad Request (400) for {method} {url}")
@@ -204,94 +206,94 @@ class ManifoldReader:
     def get_all_markets(self, usernames: Optional[Union[str, List[str]]] = None) -> Union[List[Dict[str, Any]], Dict[str, List[Dict[str, Any]]]]:
         """
         Get ALL markets by specific user(s).
-        
+
         Since the API doesn't support filtering by creator, this method fetches
         all markets and filters them client-side by creator name.
-        
+
         Args:
             usernames: Username(s) to filter by. Can be a single string or list of strings.
                       Defaults to "MikhailTal" if not provided
-            
+
         Returns:
             If single username: List of ALL markets created by the specified user
             If multiple usernames: Dict mapping username to list of their markets
         """
         if usernames is None:
             usernames = "MikhailTal"
-        
+
         # Normalize to list
         if isinstance(usernames, str):
             usernames = [usernames]
             return_single = True
         else:
             return_single = False
-        
+
         print(f"Fetching markets by {', '.join(usernames)}...")
-        
+
         # Get all markets using proper pagination with 'before' parameter
         all_markets = []
         page = 1
         limit = 1000
         before_cursor = None
-        
+
         while True:
             # Build params for this page
             params = {"limit": limit}
             if before_cursor:
                 params["before"] = before_cursor
-            
+
             # Get markets for this page
             response = self._make_request("GET", "markets", params=params)
-            
+
             if isinstance(response, list):
                 markets = response
             elif isinstance(response, dict) and "data" in response:
                 markets = response["data"]
             else:
                 markets = []
-            
+
             if not markets:
                 break
-                
+
             all_markets.extend(markets)
-            
+
             # Show progress every 10 pages
             if page % 10 == 0:
                 print(f"  Fetched {len(all_markets)} markets so far...")
-            
+
             # If we got fewer than the limit, we've reached the end
             if len(markets) < limit:
                 break
-                
+
             # Use the last market's ID as the cursor for next request
             before_cursor = markets[-1]["id"]
             page += 1
-            
+
             # Safety check to avoid infinite loops
             if page > 100:  # Max 100 pages = 100k markets
                 break
-        
+
         # Filter by creator names
         user_markets = {}
         for username in usernames:
             # Filter by creator username first
             markets = [
-                m for m in all_markets 
+                m for m in all_markets
                 if m.get('creatorUsername') == username
             ]
-            
+
             # If no matches by username, try by creator name
             if not markets:
                 markets = [
-                    m for m in all_markets 
+                    m for m in all_markets
                     if m.get('creatorName') == username
                 ]
-            
+
             user_markets[username] = markets
             print(f"✅ Found {len(markets)} markets by {username}")
-        
+
         print(f"Total markets fetched: {len(all_markets)}")
-        
+
         # Return format based on input
         if return_single:
             return user_markets[usernames[0]]

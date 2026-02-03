@@ -19,15 +19,18 @@ class TestManifoldReader:
         """Set up test fixtures."""
         self.reader = ManifoldReader()
 
+
     def test_init(self):
         """Test ManifoldReader initialization."""
         reader = ManifoldReader(timeout=60)
 
         assert reader.timeout == 60
-        assert reader.BASE_URL == "https://api.manifold.markets/v0"
         assert reader.retry_config["max_retries"] == 3
+        assert reader._BASE_URL == "https://api.manifold.markets/v0"
+        assert reader._UAS == "ManifoldBot/0.1.0"
         assert "User-Agent" in reader.session.headers
-        assert reader.session.headers["User-Agent"] == "ManifoldBot/0.1.0"
+        assert reader.session.headers["User-Agent"] == reader._UAS
+
 
     def test_init_custom_retry_config(self):
         """Test initialization with custom retry config."""
