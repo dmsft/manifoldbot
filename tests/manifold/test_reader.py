@@ -231,16 +231,19 @@ class TestManifoldReader:
         assert result == mock_user
         mock_make_request.assert_called_once_with("GET", "user/user123")
 
+
     @patch.object(ManifoldReader, "_paginate")
     def test_get_user_markets(self, mock_paginate):
         """Test get_user_markets method."""
+
         mock_markets = [{"id": "1", "creator": "user123"}]
         mock_paginate.return_value = mock_markets
 
-        result = self.reader.get_user_markets("user123", limit=10)
+        result = self.reader.get_user_markets("MikhailTal", limit=10)
 
         assert result == mock_markets
-        mock_paginate.assert_called_once_with("user/user123/markets", limit=10)
+        mock_paginate.assert_called_once_with("markets", {"userId": "MFFXxDFFEcQmeX9fwDdxsX9XVIS2"}, limit=10)
+
 
     @patch.object(ManifoldReader, "_paginate")
     def test_get_user_bets(self, mock_paginate):

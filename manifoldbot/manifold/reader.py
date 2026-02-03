@@ -203,6 +203,7 @@ class ManifoldReader:
         params = filters or {}
         return self._paginate("markets", params=params, limit=limit)
 
+
     def get_all_markets(self, usernames: Optional[Union[str, List[str]]] = None) -> Union[List[Dict[str, Any]], Dict[str, List[Dict[str, Any]]]]:
         """
         Get ALL markets by specific user(s).
@@ -359,17 +360,21 @@ class ManifoldReader:
 
     def get_user(self, user_id: str) -> Dict[str, Any]:
         """
-        Get user by ID or username.
+        Get user details by username.
 
         Args:
-            user_id: User ID or username
+            user_id: username
 
         Returns:
             User data
         """
+        # https://docs.manifold.markets/api#get-v0userusername
+        # must be a username
+
         return self._make_request("GET", f"user/{user_id}")
 
-    def get_user_markets(self, user_id: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+
+    def get_user_markets(self, user_id: Union[str, int], limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Get markets created by user.
 
@@ -380,7 +385,18 @@ class ManifoldReader:
         Returns:
             List of user's markets
         """
-        return self._paginate(f"user/{user_id}/markets", limit=limit)
+        # https://docs.manifold.markets/api#get-v0markets
+        # must use the 'markets' endpoint with 'userId' filter
+
+        if isinstance(user_id, str):
+            userId = self.get_user(user_id)["id"]
+        elif isinstance(user_id, int):
+            userId = user_id
+        else:
+            raise ValueError("user_id must be str or int")
+
+        return self._paginate(f"markets", {"userId": userId}, limit=limit)
+
 
     def get_user_bets(self, user_id: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """
