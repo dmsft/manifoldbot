@@ -343,6 +343,7 @@ class ManifoldReader:
         # This endpoint doesn't exist in the current API
         raise NotImplementedError("Market comments endpoint not available in current API")
 
+
     def get_market_bets(self, market_id: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Get market bets.
@@ -354,7 +355,12 @@ class ManifoldReader:
         Returns:
             List of bets
         """
-        return self._paginate(f"market/{market_id}/bets", limit=limit)
+        return self._paginate(
+                    "bets",
+                    params={"contractId": market_id},
+                    limit=limit
+        )
+
 
     # User endpoints
 
