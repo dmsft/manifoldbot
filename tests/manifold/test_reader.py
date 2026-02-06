@@ -195,7 +195,7 @@ class TestManifoldReader:
         assert result == mock_markets
         mock_paginate.assert_called_once_with(
             "search-markets",
-            params={"term": "AI", "limit": 10}
+            params={"term": "AI"}, limit=10
         )
 
 

@@ -114,6 +114,10 @@ class ManifoldReader:
         all_items = []
         page_params = params.copy() if params else {}
 
+        # Set page size based on limit if provided
+        if limit:
+            page_params["limit"] = min(limit, 1000)  # Cap at API max page size
+
         while True:
             response = self._make_request("GET", endpoint, params=page_params)
 
@@ -125,9 +129,8 @@ class ManifoldReader:
             else:
                 items = [response] if response else []
 
+            # Check if we've hit the limit BEFORE fetching more
             all_items.extend(items)
-
-            # Check if we've hit the limit
             if limit and len(all_items) >= limit:
                 return all_items[:limit]
 
@@ -137,6 +140,10 @@ class ManifoldReader:
                 next_cursor = response.get("nextCursor") or response.get("next_cursor")
                 if next_cursor:
                     page_params["cursor"] = next_cursor
+                    # Adjust page size for remaining items
+                    if limit:
+                        remaining = limit - len(all_items)
+                        page_params["limit"] = min(remaining, 1000)
                     continue
 
                 # Check if there are more pages
@@ -202,10 +209,10 @@ class ManifoldReader:
             params["filter"] = filter
         if contract_type:
             params["contractType"] = contract_type.upper()
-        if limit:
-            params["limit"] = limit
+        # if limit:
+        #     params["limit"] = limit
 
-        return self._paginate("search-markets", params=params)
+        return self._paginate("search-markets", params=params, limit=limit)
 
 
     def get_markets(self, limit: Optional[int] = None, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
