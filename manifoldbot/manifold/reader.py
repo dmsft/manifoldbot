@@ -175,19 +175,38 @@ class ManifoldReader:
         """
         return self._make_request("GET", f"slug/{slug}")
 
-    def search_markets(self, query: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+
+    def search_markets(self,
+                        query: str = "",
+                        limit: Optional[int] = None,
+                        filter = "",
+                        contract_type = ""
+        ) -> List[Dict[str, Any]]:
         """
         Search markets by query.
 
         Args:
             query: Search query
             limit: Maximum number of results
+            filter: Closing state e.g. open, closed, resolved, all (default).
+            contract_type: binary, bounty, poll, multiple-choice, all (default).
 
         Returns:
             List of matching markets
         """
-        params = {"term": query}
-        return self._paginate("search-markets", params=params, limit=limit)
+        params: dict[str, str | int] = {}
+
+        if query:
+            params = {"term": query}
+        if filter:
+            params["filter"] = filter
+        if contract_type:
+            params["contractType"] = contract_type.upper()
+        if limit:
+            params["limit"] = limit
+
+        return self._paginate("search-markets", params=params)
+
 
     def get_markets(self, limit: Optional[int] = None, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """

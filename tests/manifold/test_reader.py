@@ -180,16 +180,24 @@ class TestManifoldReader:
         assert result == mock_market
         mock_make_request.assert_called_once_with("GET", "slug/test-slug")
 
+
     @patch.object(ManifoldReader, "_paginate")
     def test_search_markets(self, mock_paginate):
         """Test search_markets method."""
-        mock_markets = [{"id": "1", "question": "AI market?"}, {"id": "2", "question": "AI regulation?"}]
-        mock_paginate.return_value = mock_markets
 
+        mock_markets = [
+            {"id": "1", "question": "AI market?"},
+            {"id": "2", "question": "AI regulation?"}
+        ]
+        mock_paginate.return_value = mock_markets
         result = self.reader.search_markets("AI", limit=10)
 
         assert result == mock_markets
-        mock_paginate.assert_called_once_with("search-markets", params={"term": "AI"}, limit=10)
+        mock_paginate.assert_called_once_with(
+            "search-markets",
+            params={"term": "AI", "limit": 10}
+        )
+
 
     @patch.object(ManifoldReader, "_paginate")
     def test_get_markets(self, mock_paginate):
